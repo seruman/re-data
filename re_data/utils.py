@@ -5,6 +5,8 @@ import os
 from dbt.config.project import Project
 import pkg_resources
 import yaml
+import subprocess
+from yachalk import chalk
 try:
     from yaml import (
         CSafeLoader as SafeLoader
@@ -59,3 +61,19 @@ def parse_dbt_vars(dbt_vars_string) -> Dict[str, Any]:
 
 def safe_load(content) -> Optional[Dict[str, Any]]:
     return yaml.load(content, Loader=SafeLoader)
+
+
+def check_subprocess_returncode(process: subprocess.CompletedProcess):
+    try:
+        process.check_returncode()
+    except subprocess.CalledProcessError as e:
+        outputs = []
+        if e.output:
+            outputs.append("output:", e.output)
+        if e.stderr:
+            outputs.append("stderr:", e.stderr)
+
+        if outputs:
+            print(chalk.red("Error: ", *outputs))
+
+        raise e

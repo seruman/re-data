@@ -19,7 +19,7 @@ from re_data.notifications.slack import slack_notify, generate_slack_message, ge
 from re_data.notifications.email import send_mime_email, build_mime_message
 from re_data.utils import (
     parse_dbt_vars, load_metadata_from_project, normalize_re_data_json_export,
-    get_project_root
+    get_project_root, check_subprocess_returncode
 )
 
 from re_data.notifications.utils import build_notification_identifiers_per_model, prepare_exported_alerts_per_model, validate_alert_types, ALERT_TYPES
@@ -152,7 +152,7 @@ def detect(**kwargs):
     if dbt_vars: run_list.extend(['--vars', yaml.dump(dbt_vars)])
     add_dbt_flags(run_list, kwargs)
     completed_process = subprocess.run(run_list)
-    completed_process.check_returncode()
+    check_subprocess_returncode(completed_process)
 
     print(f"Detecting tables", "SUCCESS")
 
@@ -221,7 +221,7 @@ def run(start_date, end_date, interval, full_refresh, **kwargs):
         add_dbt_flags(run_list, kwargs)
 
         completed_process = subprocess.run(run_list)
-        completed_process.check_returncode()
+        check_subprocess_returncode(completed_process)
 
         for_date += delta
 
@@ -307,7 +307,7 @@ def generate(start_date, end_date, interval, re_data_target_dir, force, **kwargs
     if dbt_vars: command_list.extend(['--vars', yaml.dump(dbt_vars)])
     add_dbt_flags(command_list, kwargs)
     completed_process = subprocess.run(command_list)
-    completed_process.check_returncode()
+    check_subprocess_returncode(completed_process)
 
     # export tests history
     tests_history_args = {
@@ -319,7 +319,7 @@ def generate(start_date, end_date, interval, re_data_target_dir, force, **kwargs
     if dbt_vars: tests_history_command_list.extend(['--vars', yaml.dump(dbt_vars)])
     add_dbt_flags(tests_history_command_list, kwargs)
     th_completed_process = subprocess.run(tests_history_command_list)
-    th_completed_process.check_returncode()
+    check_subprocess_returncode(th_completed_process)
 
     # export table samples
     table_samples_args = {
@@ -331,7 +331,7 @@ def generate(start_date, end_date, interval, re_data_target_dir, force, **kwargs
     if dbt_vars: table_samples_command_list.extend(['--vars', yaml.dump(dbt_vars)])
     add_dbt_flags(table_samples_command_list, kwargs)
     ts_completed_process = subprocess.run(table_samples_command_list)
-    ts_completed_process.check_returncode()
+    check_subprocess_returncode(ts_completed_process)
 
     # write metadata to re_data target path
     with open(metadata_path, 'w+', encoding='utf-8') as f:
@@ -343,7 +343,7 @@ def generate(start_date, end_date, interval, re_data_target_dir, force, **kwargs
     add_dbt_flags(dbt_docs, kwargs)
     dbt_docs_process = subprocess.run(dbt_docs)
     if force is not True:
-        dbt_docs_process.check_returncode()
+        check_subprocess_returncode(dbt_docs_process)
 
     dbt_manifest_path = os.path.join(dbt_target_path, 'manifest.json')
     re_data_manifest = os.path.join(re_data_target_path, 'dbt_manifest.json')
@@ -478,7 +478,7 @@ def slack(start_date, end_date, webhook_url, subtitle, re_data_target_dir, selec
     if dbt_vars: command_list.extend(['--vars', yaml.dump(dbt_vars)])
     add_dbt_flags(command_list, kwargs)
     completed_process = subprocess.run(command_list)
-    completed_process.check_returncode()
+    check_subprocess_returncode(completed_process)
 
     normalize_re_data_json_export(alerts_path)
     normalize_re_data_json_export(monitored_path)
@@ -575,7 +575,7 @@ def email(start_date, end_date, re_data_target_dir, select, **kwargs):
     if dbt_vars: command_list.extend(['--vars', yaml.dump(dbt_vars)])
     add_dbt_flags(command_list, kwargs)
     completed_process = subprocess.run(command_list)
-    completed_process.check_returncode()
+    check_subprocess_returncode(completed_process)
 
     with open(alerts_path) as f:
         alerts = json.load(f)
